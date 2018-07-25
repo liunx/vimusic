@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import time
+import mido
 from mido import Message, MidiFile, MidiTrack, tempo2bpm
 
 key_dict = {
@@ -58,6 +60,9 @@ class Composer:
         track.append(Message('note_on', note=midi_note, velocity=100, time=0))
         track.append(Message('note_off', note=midi_note, velocity=0, time=midi_time))
 
+        #track.append(Message('note_on', note=0, velocity=100, time=0))
+        #track.append(Message('note_off', note=0, velocity=0, time=midi_time*10))
+
     def save(self, name):
         self.midi_file.save(name)
 
@@ -84,7 +89,23 @@ def demo1():
     demo.save('joy.mid')
 
 
+def play_note():
+    midi_note = 64
+    midi_time = 640
+    for i in range(10):
+        with mido.open_output('FLUID Synth (25699):Synth input port (25699:0) 129:0') as output:
+            output.send(Message('program_change', program=1))
+
+            output.send(Message('note_on', note=midi_note, velocity=100, time=0))
+            output.send(Message('note_on', note=midi_note + 4, velocity=100, time=0))
+            output.send(Message('note_on', note=midi_note + 7, velocity=100, time=0))
+            time.sleep(1)
+            output.send(Message('note_off', note=midi_note, velocity=0, time=midi_time))
+            output.send(Message('note_off', note=midi_note + 4, velocity=100, time=midi_time))
+            output.send(Message('note_off', note=midi_note + 7, velocity=100, time=midi_time))
+
 
 if __name__ == "__main__":
-    demo1()
+    #demo1()
+    play_note()
 
