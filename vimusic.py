@@ -38,7 +38,31 @@ key_dict = {
         }
 
 
-demo = [
+class Composer:
+    def __init__(self, tempo=720, midi_type=1):
+        self.tempo = tempo
+        self.midi_file = MidiFile(type=midi_type)
+
+    def track(self, program=1):
+        midi_track = MidiTrack()
+        self.midi_file.tracks.append(midi_track)
+        midi_track.append(Message('program_change', program=program))
+        return midi_track
+
+    def program(self, track, program):
+        track.append(Message('program_change', program=program))
+
+    def note(self, track, note):
+        midi_note = key_dict[note[0]]
+        midi_time = int(self.tempo * note[1])
+        track.append(Message('note_on', note=midi_note, velocity=100, time=0))
+        track.append(Message('note_off', note=midi_note, velocity=0, time=midi_time))
+
+    def save(self, name):
+        self.midi_file.save(name)
+
+
+joy_notes = [
         ["e", 1./4.], ["e", 1./4.], ["f", 1./4.], ["g", 1./4.],
         ["g", 1./4.], ["f", 1./4.], ["e", 1./4.], ["d", 1./4.],
         ["c", 1./4.], ["c", 1./4.], ["d", 1./4.], ["e", 1./4.],
@@ -49,25 +73,18 @@ demo = [
         ["d", 1./2.], ["c", 1./4.], ["c", 1./4.],
         ]
 
+
+def demo1():
+    demo = Composer()
+    track = demo.track()
+
+    for n in joy_notes:
+        demo.note(track, n)
+
+    demo.save('joy.mid')
+
+
+
 if __name__ == "__main__":
-    outfile = MidiFile(type=1)
-    track = MidiTrack()
-    track2 = MidiTrack()
-    outfile.tracks.append(track)
-    outfile.tracks.append(track2)
-    track.append(Message('program_change', program=1))
-    track2.append(Message('program_change', program=1))
-    delta = 640
-    for i in demo:
-        print(delta * i[1])
-        track.append(Message('note_on', note=key_dict[i[0]], velocity=100, time=int(delta * i[1])))
-        track.append(Message('note_off', note=key_dict[i[0]], velocity=100, time=int(delta * i[1])))
-
-        track2.append(Message('note_on', note=key_dict[i[0]] + 7, velocity=100, time=int(delta * i[1])))
-        track2.append(Message('note_off', note=key_dict[i[0]] + 7, velocity=100, time=int(delta * i[1])))
-
-        #track.append(Message('note_on', note=key_dict[i[0]], velocity=0, time=int(delta * i[1])))
-        #track.append(Message('note_off', note=key_dict[i[0]], velocity=0, time=int(delta * i[1])))
-
-    outfile.save('joy.mid')
+    demo1()
 
