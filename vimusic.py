@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import time
 import mido
 from mido import Message, MidiFile, MidiTrack, tempo2bpm
+from pynput import keyboard
 
 key_dict = {
         # c4
@@ -105,7 +107,65 @@ def play_note():
             output.send(Message('note_off', note=midi_note + 7, velocity=100, time=midi_time))
 
 
+def play_note2():
+    midi_keymap = {
+            "a": ["c", False],
+            "s": ["d", False],
+            "d": ["e", False],
+            "f": ["f", False],
+            "g": ["g", False],
+            "h": ["a", False],
+            "j": ["b", False],
+            "k": ["C1", False],
+            "l": ["D1", False],
+            }
+
+    def send_note_on(key, midi_port):
+        attr = midi_keymap.get(key)
+        if not attr:
+            return
+        midi_note = key_dict.get(attr[0])
+
+        if attr[1] == False:
+            midi_port.send(Message('note_on', note=midi_note, velocity=100, time=0))
+            attr[1] = True
+
+    def send_note_off(key, midi_port):
+        print(key)
+        attr = midi_keymap.get(key)
+        if not attr:
+            return
+        midi_note = key_dict.get(attr[0])
+
+        if attr[1] == True:
+            midi_port.send(Message('note_off', note=midi_note, velocity=0, time=0))
+            attr[1] = False
+
+    def on_press(key):
+        try:
+            send_note_on(key.char, midi_port)
+        except AttributeError:
+            print('special key {0} pressed'.format(
+                key))
+
+    def on_release(key):
+        if key == keyboard.Key.esc:
+            # Stop listener
+            return False
+
+        k = list(str(key))[1]
+        send_note_off(k, midi_port)
+
+    # Collect events until released
+    with mido.open_output('FLUID Synth (25699):Synth input port (25699:0) 129:0') as midi_port:
+        midi_port.send(Message('program_change', program=1))
+
+        with keyboard.Listener(
+                on_press=on_press,
+                on_release=on_release) as listener:
+            listener.join()
+
+
 if __name__ == "__main__":
-    #demo1()
-    play_note()
+    play_note2()
 
