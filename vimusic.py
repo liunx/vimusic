@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+import os
 import mido
 from mido import Message, MidiFile, MidiTrack, tempo2bpm
 from pynput import keyboard
@@ -108,6 +109,7 @@ def play_note():
 
 
 def play_note2():
+    fluid_port = 'FLUID Synth (2552):Synth input port (2552:0) 129:0'
     midi_keymap = {
             "a": ["c", False],
             "s": ["d", False],
@@ -131,7 +133,6 @@ def play_note2():
             attr[1] = True
 
     def send_note_off(key, midi_port):
-        print(key)
         attr = midi_keymap.get(key)
         if not attr:
             return
@@ -157,13 +158,15 @@ def play_note2():
         send_note_off(k, midi_port)
 
     # Collect events until released
-    with mido.open_output('FLUID Synth (25699):Synth input port (25699:0) 129:0') as midi_port:
+    with mido.open_output(fluid_port) as midi_port:
         midi_port.send(Message('program_change', program=1))
 
+        os.system("stty -echo")
         with keyboard.Listener(
                 on_press=on_press,
                 on_release=on_release) as listener:
             listener.join()
+        os.system("stty echo")
 
 
 if __name__ == "__main__":
