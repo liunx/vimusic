@@ -169,6 +169,24 @@ def play_note2():
         os.system("stty echo")
 
 
+def play_note3():
+    fluid_port = 'FLUID Synth (2552):Synth input port (2552:0) 129:0'
+    tempo = 100.
+    with mido.open_output(fluid_port) as midi_port:
+        midi_port.send(Message('program_change', program=1))
+        for n in joy_notes:
+            midi_note = key_dict.get(n[0])
+            midi_time = (60. / tempo) * n[1]
+            midi_port.send(Message('note_on', note=midi_note, velocity=100, time=0))
+            pre = time.time()
+            while True:
+                cur = time.time()
+                if (cur - pre) > midi_time:
+                    midi_port.send(Message('note_off', note=midi_note, velocity=100, time=0))
+                    break
+                time.sleep(0.001)
+
+
 if __name__ == "__main__":
-    play_note2()
+    play_note3()
 
