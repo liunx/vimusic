@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+#-*- coding:utf-8 -*-
 
 from pynput import keyboard
+import time
+import os
 
 def on_press(key):
     try:
@@ -13,15 +16,11 @@ def on_press(key):
 def on_release(key):
     print('{0} released'.format(
         key))
-    print(len(str(key)))
-    if str(key) == "'b'":
-        print("OK")
     if key == keyboard.Key.esc:
         # Stop listener
         return False
 
 # Collect events until released
-with keyboard.Listener(
-        on_press=on_press,
-        on_release=on_release) as listener:
+with keyboard.Listener( on_press=on_press, on_release=on_release) as listener:
     listener.join()
+os.system('clear')
