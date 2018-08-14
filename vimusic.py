@@ -188,5 +188,5 @@ def play_note3():
 
 
 if __name__ == "__main__":
-    play_note3()
+    play_note2()
 
