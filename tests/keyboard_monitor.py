@@ -41,6 +41,9 @@ def on_press(key):
         elif key.char == '.':
             if base_note < 127 - 12:
                 base_note += 12
+        elif key.char == '/':
+            if base_note < 127 - 12:
+                base_note += 12
 
         data = midi_seqs.get("'{}'".format(key.char))
         if data != None:
