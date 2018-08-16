@@ -50,7 +50,8 @@ def on_press(key):
             midi_note = data[0]
             state = data[1]
             if state == False:
-                midi_port.send(Message('note_on', note=(midi_note + base_note), velocity=100, time=0))
+                # channel 9 (#10) means beats
+                midi_port.send(Message('note_on', note=(midi_note + base_note), channel=0, velocity=100, time=0))
                 data[1] = True
     except AttributeError:
         pass
@@ -60,13 +61,15 @@ def on_release(key):
     if data != None:
         midi_note = data[0]
         data[1] = False
-        midi_port.send(Message('note_off', note=(midi_note + base_note), velocity=100, time=0))
+        # channel 9 (#10) means beats
+        midi_port.send(Message('note_off', note=(midi_note + base_note), channel=0, velocity=100, time=0))
     if key == keyboard.Key.esc:
         # Stop listener
         return False
 
 
 if __name__ == "__main__":
+    # mido.get_output_names()
     fluid_port = 'FLUID Synth (2552):Synth input port (2552:0) 129:0'
 
     os.system("stty -echo")
