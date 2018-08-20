@@ -6,6 +6,9 @@ import time
 import os
 import mido
 from mido import Message, MidiFile, MidiTrack, tempo2bpm
+import queue
+import threading
+
 
 midi_seqs = {
         "'a'": [0, False],
@@ -24,57 +27,80 @@ midi_seqs = {
         "';'": [12, False]
         }
 
-base_note = 64
+midi_shift_keys = {
+        "'z'": -12,
+        "'x'": +12,
+        "','": -12,
+        "'.'": +12,
+        "'/'": +12,
+        }
+
 
 def on_press(key):
     global base_note
     try:
-        if key.char == 'z':
-            if base_note > 12:
-                base_note -= 12
-        elif key.char == 'x':
-            if base_note < 127 - 12:
-                base_note += 12
-        elif key.char == ',':
-            if base_note > 12:
-                base_note -= 12
-        elif key.char == '.':
-            if base_note < 127 - 12:
-                base_note += 12
-        elif key.char == '/':
-            if base_note < 127 - 12:
-                base_note += 12
-
-        data = midi_seqs.get("'{}'".format(key.char))
-        if data != None:
-            midi_note = data[0]
-            state = data[1]
-            if state == False:
-                # channel 9 (#10) means beats
-                midi_port.send(Message('note_on', note=(midi_note + base_note), channel=0, velocity=100, time=0))
-                data[1] = True
+        q.put(['P', "'{}'".format(key.char)])
     except AttributeError:
         pass
 
 def on_release(key):
-    data = midi_seqs.get(str(key))
-    if data != None:
-        midi_note = data[0]
-        data[1] = False
-        # channel 9 (#10) means beats
-        midi_port.send(Message('note_off', note=(midi_note + base_note), channel=0, velocity=100, time=0))
     if key == keyboard.Key.esc:
         # Stop listener
+        q.put(['R', 'QUIT'])
         return False
+
+    q.put(['R', str(key)])
+
+
+
+def worker(q):
+    print("starting Worker thread...")
+
+    fluid_port = 'FLUID Synth (2552):Synth input port (2552:0) 129:0'
+    base_note = 64
+
+    with mido.open_output(fluid_port) as midi_port:
+        midi_port.send(Message('program_change', program=1))
+        while True:
+            if not q.empty():
+                item = q.get_nowait()
+                q.task_done()
+
+                if item[1] == "QUIT":
+                    print("Worker thread quit!")
+                    return
+
+                if item[0] == 'P':
+                    data = midi_shift_keys.get(item[1])
+                    if data != None:
+                        tmp_note = base_note + data
+                        if tmp_note > 0 and tmp_note < 127:
+                            base_note = tmp_note
+                        continue
+
+                    data = midi_seqs.get(item[1])
+                    if data != None:
+                        midi_note = data[0]
+                        state = data[1]
+                        if state == False:
+                            midi_port.send(Message('note_on', note=(midi_note + base_note), velocity=100, time=0))
+                            data[1] = True
+                elif item[0] == 'R':
+                    data = midi_seqs.get(item[1])
+                    if data != None:
+                        midi_note = data[0]
+                        data[1] = False
+                        midi_port.send(Message('note_off', note=(midi_note + base_note), velocity=100, time=0))
+            time.sleep(0.001)
 
 
 if __name__ == "__main__":
-    # mido.get_output_names()
-    fluid_port = 'FLUID Synth (2552):Synth input port (2552:0) 129:0'
+    q = queue.Queue()
+    t = threading.Thread(target=worker, args=(q,))
+    t.start()
 
     os.system("stty -echo")
-    with mido.open_output(fluid_port) as midi_port:
-        midi_port.send(Message('program_change', program=1))
-        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-            listener.join()
+    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+        listener.join()
     os.system("stty echo")
+    t.join()
