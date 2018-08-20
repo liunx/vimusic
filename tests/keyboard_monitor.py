@@ -8,6 +8,7 @@ import mido
 from mido import Message, MidiFile, MidiTrack, tempo2bpm
 import queue
 import threading
+from enum import Enum
 
 
 midi_seqs = {
@@ -35,6 +36,25 @@ midi_shift_keys = {
         "'/'": +12,
         }
 
+# mode
+C = 64
+Csharp = 65
+Dflat = 65
+D = 66
+Dsharp = 67
+Eflat = 67
+E = 68
+F = 69
+Fsharp = 70
+Gflat = 70
+G = 71
+Gsharp = 72
+Aflat = 72
+A = 73
+Asharp = 74
+Bflat = 74
+B = 75
+
 
 def on_press(key):
     global base_note
@@ -57,7 +77,7 @@ def worker(q):
     print("starting Worker thread...")
 
     fluid_port = 'FLUID Synth (2552):Synth input port (2552:0) 129:0'
-    base_note = 64
+    base_note = C
 
     with mido.open_output(fluid_port) as midi_port:
         midi_port.send(Message('program_change', program=1))
