@@ -72,6 +72,32 @@ def on_release(key):
     q.put(['R', str(key)])
 
 
+def worker2(q):
+    print("starting Worker2 thread...")
+
+    count = 0
+    stack = []
+    while True:
+        if not q.empty():
+            item = q.get_nowait()
+            q.task_done()
+            if item[1] == "QUIT":
+                print("Worker2 thread quit!")
+                return
+            if count < 5:
+                stack.append(item)
+                time.sleep(0.001)
+                count += 1
+                continue
+        if stack:
+            for i in stack:
+                if i[0] == 'P':
+                    print(i[1])
+            stack = []
+            count = 0
+
+        time.sleep(0.001)
+
 
 def worker(q):
     print("starting Worker thread...")
@@ -116,7 +142,7 @@ def worker(q):
 
 if __name__ == "__main__":
     q = queue.Queue()
-    t = threading.Thread(target=worker, args=(q,))
+    t = threading.Thread(target=worker2, args=(q,))
     t.start()
 
     os.system("stty -echo")
